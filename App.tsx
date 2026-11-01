@@ -7,10 +7,10 @@ import {
   getScaleNotes, NOTE_NAMES, SCALE_DEFINITIONS, ScaleName
 } from "./src/musicTheory";
 
-type TabName = "Fretboard" | "Scales" | "Chords" | "Practice" | "Bass";
+type TabName = "Fretboard" | "Scales" | "Chords" | "Practice" | "Bass" | "Drums";
 type Exercise = { title: string; detail: string; duration: string };
 
-const TABS: TabName[] = ["Fretboard", "Scales", "Chords", "Practice", "Bass"];
+const TABS: TabName[] = ["Fretboard", "Scales", "Chords", "Practice", "Bass", "Drums"];
 const SCALE_NAMES = Object.keys(SCALE_DEFINITIONS) as ScaleName[];
 const CHORD_NAMES = Object.keys(CHORD_DEFINITIONS) as ChordName[];
 const ROOTS = [...NOTE_NAMES];
@@ -39,6 +39,11 @@ export default function App() {
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [sessionRunning, setSessionRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [drumBpm, setDrumBpm] = useState(100);
+  const [drumPattern, setDrumPattern] = useState("Straight rock");
+  const [drumSteps, setDrumSteps] = useState<Record<string, number[]>>({ Kick: [0, 8], Snare: [4, 12], "Closed hi-hat": [0, 2, 4, 6, 8, 10, 12, 14], "Open hi-hat": [] });
+  const [drumRunning, setDrumRunning] = useState(false);
+  const [recording, setRecording] = useState(false);
 
   useEffect(() => {
     if (!sessionRunning) return;
@@ -253,6 +258,59 @@ export default function App() {
     </>
   );
 
+  const DRUM_PATTERNS: Record<string, Record<string, number[]>> = {
+    "Straight rock": { Kick: [0, 8], Snare: [4, 12], "Closed hi-hat": [0, 2, 4, 6, 8, 10, 12, 14], "Open hi-hat": [] },
+    "Half-time": { Kick: [0, 10], Snare: [8], "Closed hi-hat": [0, 2, 4, 6, 8, 10, 12, 14], "Open hi-hat": [] },
+    "Blues shuffle": { Kick: [0, 6, 8, 14], Snare: [4, 12], "Closed hi-hat": [0, 3, 4, 7, 8, 11, 12, 15], "Open hi-hat": [] },
+    "Four on the floor": { Kick: [0, 4, 8, 12], Snare: [4, 12], "Closed hi-hat": [0, 2, 4, 6, 8, 10, 12, 14], "Open hi-hat": [6, 14] }
+  };
+  const applyDrumPattern = (name: string) => { setDrumPattern(name); setDrumSteps(DRUM_PATTERNS[name]); };
+  const toggleDrumStep = (instrument: string, step: number) => setDrumSteps(current => ({ ...current, [instrument]: current[instrument].includes(step) ? current[instrument].filter(value => value !== step) : [...current[instrument], step].sort((a, b) => a - b) }));
+  const renderDrumScreen = () => (
+    <>
+      <Text style={styles.eyebrow}>RHYTHM & DEMO ROOM</Text>
+      <Text style={styles.title}>Drum machine</Text>
+      <Text style={styles.description}>Choose a backing groove or build a beat on the 16-step grid. Recording will live here alongside the drum controls.</Text>
+      <View style={styles.timerCard}>
+        <Text style={styles.summaryLabel}>TEMPO</Text>
+        <View style={styles.tempoRow}>
+          <TouchableOpacity style={styles.tempoButton} onPress={() => setDrumBpm(value => Math.max(40, value - 1))}><Text style={styles.tempoButtonText}>−</Text></TouchableOpacity>
+          <Text style={styles.tempoValue}>{drumBpm} <Text style={styles.tempoUnit}>BPM</Text></Text>
+          <TouchableOpacity style={styles.tempoButton} onPress={() => setDrumBpm(value => Math.min(240, value + 1))}><Text style={styles.tempoButtonText}>+</Text></TouchableOpacity>
+        </View>
+        <View style={styles.stepButtons}>
+          <TouchableOpacity onPress={() => setDrumRunning(value => !value)} style={styles.primaryButton}><Text style={styles.buttonText}>{drumRunning ? "STOP" : "PLAY LOOP"}</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setRecording(value => !value)} style={[styles.recordButton, recording && styles.recordButtonActive]}><Text style={styles.buttonText}>{recording ? "STOP RECORDING" : "● RECORD"}</Text></TouchableOpacity>
+        </View>
+        <Text style={styles.hint}>Playback and microphone recording are not connected yet. The controls below define the beat while the audio engine is added.</Text>
+      </View>
+      <Text style={styles.sectionLabel}>PRESET GROOVES</Text>
+      <View style={styles.choiceGrid}>
+        {Object.keys(DRUM_PATTERNS).map(name => <TouchableOpacity key={name} onPress={() => applyDrumPattern(name)} style={[styles.choiceChip, drumPattern === name && styles.choiceChipActive]}><Text style={[styles.choiceText, drumPattern === name && styles.choiceTextActive]}>{name}</Text></TouchableOpacity>)}
+      </View>
+      <Text style={styles.sectionLabel}>16-STEP BEAT PROGRAMMER</Text>
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>{drumPattern} · 1 BAR</Text>
+        {Object.keys(drumSteps).map(instrument => (
+          <View key={instrument} style={styles.drumRow}>
+            <Text style={styles.drumInstrument}>{instrument}</Text>
+            <View style={styles.drumSteps}>
+              {Array.from({ length: 16 }, (_, step) => <TouchableOpacity key={step} accessibilityRole="button" accessibilityLabel={instrument + " step " + (step + 1)} onPress={() => toggleDrumStep(instrument, step)} style={[styles.drumStep, drumSteps[instrument].includes(step) && styles.drumStepActive, step % 4 === 0 && styles.drumBeatStart]} />)}
+            </View>
+          </View>
+        ))}
+        <Text style={styles.hint}>Tap a square to switch that drum hit on or off. Steps 1, 5, 9 and 13 mark the quarter-note beats.</Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => { setDrumSteps({ Kick: [], Snare: [], "Closed hi-hat": [], "Open hi-hat": [] }); setDrumPattern("Custom"); }}><Text style={styles.buttonText}>CLEAR PATTERN</Text></TouchableOpacity>
+      </View>
+      <Text style={styles.sectionLabel}>DEMO RECORDING</Text>
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>Record with your groove</Text>
+        <Text style={styles.description}>The finished recording area will capture your instrument performance and the drum backing together, then let you replay and save the combined demo. It will not be a separate recording screen.</Text>
+        <Text style={styles.hint}>Next audio milestone: integrate drum playback, input recording, synchronisation and demo playback in this screen.</Text>
+      </View>
+    </>
+  );
+
   const renderPracticeScreen = () => (
     <>
       <Text style={styles.eyebrow}>PRACTICE ROOM</Text>
@@ -298,7 +356,7 @@ export default function App() {
         <Text style={styles.brand}>LEFTY <Text style={styles.brandAccent}>GUITAR STUDIO</Text></Text>
         <Text style={styles.subhead}>GUITAR  ·  BASS  ·  PRACTICE</Text>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabs} contentContainerStyle={styles.tabsContent}>
+      <View style={styles.tabs}>
         {TABS.map(item => (
           <TouchableOpacity key={item} onPress={() => { setTab(item); setSelectedNote(null); }} style={[styles.tab, tab === item && styles.tabActive]}>
             <Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text>
@@ -310,23 +368,23 @@ export default function App() {
         {tab === "Bass" ? renderFretboardScreen(true) : null}
         {tab === "Scales" ? renderScalesScreen() : null}
         {tab === "Chords" ? renderChordsScreen() : null}
-        {tab === "Practice" ? renderPracticeScreen() : null}
+        {tab === "Practice" ? renderPracticeScreen() : null}\n        {tab === "Drums" ? renderDrumScreen() : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#101318" },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 13 },
+  safe: { flex: 1, backgroundColor: "#101318", paddingTop: StatusBar.currentHeight || 0 },
+  header: { paddingHorizontal: 20, paddingTop: 9, paddingBottom: 13 },
   brand: { color: "#F3F4F6", fontSize: 19, fontWeight: "900", letterSpacing: 1.2 },
   brandAccent: { color: "#E8A642" },
   subhead: { color: "#87909D", fontSize: 10, letterSpacing: 2, marginTop: 5 },
-  tabs: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: "#2A303A" },
+  tabs: { flexDirection: "row", flexWrap: "wrap", borderBottomWidth: 1, borderBottomColor: "#2A303A" },
   tabsContent: { paddingHorizontal: 10 },
-  tab: { paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 2, borderBottomColor: "transparent" },
+  tab: { width: "33.333%", paddingHorizontal: 4, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   tabActive: { borderBottomColor: "#E8A642" },
-  tabText: { color: "#87909D", fontSize: 12, fontWeight: "700" },
+  tabText: { color: "#87909D", fontSize: 11, fontWeight: "700" },
   tabTextActive: { color: "#F3F4F6" },
   content: { padding: 18, paddingBottom: 44 },
   eyebrow: { color: "#E8A642", fontSize: 10, fontWeight: "800", letterSpacing: 2 },
@@ -394,5 +452,5 @@ const styles = StyleSheet.create({
   buttonText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900", letterSpacing: 1 },
   exerciseCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 13, marginBottom: 8, backgroundColor: "#1B222B", borderRadius: 10, borderWidth: 1, borderColor: "#343D49" },
   exerciseActive: { borderColor: "#E8A642", backgroundColor: "#292319" },
-  duration: { color: "#E8A642", fontSize: 10, fontWeight: "800", marginTop: 7 }
+  duration: { color: "#E8A642", fontSize: 10, fontWeight: "800", marginTop: 7 },\n  tempoRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },\n  tempoButton: { width: 48, height: 44, borderRadius: 8, backgroundColor: "#303A46", alignItems: "center", justifyContent: "center" },\n  tempoButtonText: { color: "#FFFFFF", fontSize: 25, fontWeight: "700" },\n  tempoValue: { color: "#FFFFFF", fontSize: 32, fontWeight: "900" },\n  tempoUnit: { color: "#A5ADB8", fontSize: 13 },\n  recordButton: { flex: 1, backgroundColor: "#6F3035", padding: 13, borderRadius: 8, alignItems: "center" },\n  recordButtonActive: { backgroundColor: "#B32632" },\n  drumRow: { marginTop: 15 },\n  drumInstrument: { color: "#D6DCE4", fontSize: 11, fontWeight: "800", marginBottom: 7 },\n  drumSteps: { flexDirection: "row", justifyContent: "space-between", gap: 3 },\n  drumStep: { flex: 1, height: 27, borderRadius: 4, backgroundColor: "#303A46", borderWidth: 1, borderColor: "#465363" },\n  drumStepActive: { backgroundColor: "#B87925", borderColor: "#E8A642" },\n  drumBeatStart: { borderLeftWidth: 2, borderLeftColor: "#A5ADB8" }
 });
