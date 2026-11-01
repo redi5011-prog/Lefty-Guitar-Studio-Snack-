@@ -32,7 +32,26 @@ export const SCALE_DEFINITIONS = {
   "Diminished (half-whole)": { intervals: [0, 1, 3, 4, 6, 7, 9, 10], formula: "1  ♭2  ♭3  3  ♯4  5  6  ♭7" },
   "Phrygian dominant": { intervals: [0, 1, 4, 5, 7, 8, 10], formula: "1  ♭2  3  4  5  ♭6  ♭7" },
   "Lydian dominant": { intervals: [0, 2, 4, 6, 7, 9, 10], formula: "1  2  3  ♯4  5  6  ♭7" },
-  "Altered": { intervals: [0, 1, 3, 4, 6, 8, 10], formula: "1  ♭2  ♯2  3  ♭5  ♯5  ♭7" }
+  "Altered": { intervals: [0, 1, 3, 4, 6, 8, 10], formula: "1  ♭2  ♯2  3  ♭5  ♯5  ♭7" },
+  "Double harmonic major": { intervals: [0, 1, 4, 5, 7, 8, 11], formula: "1  ♭2  3  4  5  ♭6  7" },
+  "Hungarian minor": { intervals: [0, 2, 3, 6, 7, 8, 11], formula: "1  2  ♭3  ♯4  5  ♭6  7" },
+  "Hungarian major": { intervals: [0, 3, 4, 6, 7, 9, 10], formula: "1  ♭3  3  ♯4  5  6  ♭7" },
+  "Neapolitan minor": { intervals: [0, 1, 3, 5, 7, 8, 11], formula: "1  ♭2  ♭3  4  5  ♭6  7" },
+  "Neapolitan major": { intervals: [0, 1, 3, 5, 7, 9, 11], formula: "1  ♭2  ♭3  4  5  6  7" },
+  "Bebop dominant": { intervals: [0, 2, 4, 5, 7, 9, 10, 11], formula: "1  2  3  4  5  6  ♭7  7" },
+  "Bebop major": { intervals: [0, 2, 4, 5, 7, 8, 9, 11], formula: "1  2  3  4  5  ♭6  6  7" },
+  "Bebop Dorian": { intervals: [0, 2, 3, 4, 5, 7, 9, 10], formula: "1  2  ♭3  3  4  5  6  ♭7" },
+  "Enigmatic": { intervals: [0, 1, 4, 6, 8, 10, 11], formula: "1  ♭2  3  ♯4  ♯5  ♭7  7" },
+  "Prometheus": { intervals: [0, 2, 4, 6, 9, 10], formula: "1  2  3  ♯4  6  ♭7" },
+  "Persian": { intervals: [0, 1, 4, 5, 6, 8, 11], formula: "1  ♭2  3  4  ♭5  ♭6  7" },
+  "Hirajoshi": { intervals: [0, 2, 3, 7, 8], formula: "1  2  ♭3  5  ♭6" },
+  "In Sen": { intervals: [0, 1, 5, 7, 10], formula: "1  ♭2  4  5  ♭7" },
+  "Iwato": { intervals: [0, 1, 5, 6, 10], formula: "1  ♭2  4  ♭5  ♭7" },
+  "Kumoi": { intervals: [0, 2, 3, 7, 9], formula: "1  2  ♭3  5  6" },
+  "Egyptian": { intervals: [0, 2, 5, 7, 10], formula: "1  2  4  5  ♭7" },
+  "Balinese": { intervals: [0, 1, 3, 7, 8], formula: "1  ♭2  ♭3  5  ♭6" },
+  "Yo": { intervals: [0, 2, 5, 7, 9], formula: "1  2  4  5  6" },
+  "Pelog (five-tone approximation)": { intervals: [0, 1, 3, 7, 8], formula: "1  ♭2  ♭3  5  ♭6" }
 } as const;
 
 export type ScaleName = keyof typeof SCALE_DEFINITIONS;
@@ -64,7 +83,21 @@ export const CHORD_DEFINITIONS = {
   "Dominant 11": { intervals: [0, 4, 7, 10, 14, 17], formula: "1  3  5  ♭7  9  11" },
   "Major 13": { intervals: [0, 4, 7, 11, 14, 17, 21], formula: "1  3  5  7  9  11  13" },
   "Minor 13": { intervals: [0, 3, 7, 10, 14, 17, 21], formula: "1  ♭3  5  ♭7  9  11  13" },
-  "Dominant 13": { intervals: [0, 4, 7, 10, 14, 17, 21], formula: "1  3  5  ♭7  9  11  13" }
+  "Dominant 13": { intervals: [0, 4, 7, 10, 14, 17, 21], formula: "1  3  5  ♭7  9  11  13" },
+  "6/9": { intervals: [0, 4, 7, 9, 14], formula: "1  3  5  6  9" },
+  "Major 7♯5": { intervals: [0, 4, 8, 11], formula: "1  3  ♯5  7" },
+  "Major 7♭5": { intervals: [0, 4, 6, 11], formula: "1  3  ♭5  7" },
+  "Minor-major 7": { intervals: [0, 3, 7, 11], formula: "1  ♭3  5  7" },
+  "7♭9": { intervals: [0, 4, 7, 10, 13], formula: "1  3  5  ♭7  ♭9" },
+  "7♯9": { intervals: [0, 4, 7, 10, 15], formula: "1  3  5  ♭7  ♯9" },
+  "7♯11": { intervals: [0, 4, 7, 10, 18], formula: "1  3  5  ♭7  ♯11" },
+  "7♭13": { intervals: [0, 4, 7, 10, 20], formula: "1  3  5  ♭7  ♭13" },
+  "9sus4": { intervals: [0, 5, 7, 10, 14], formula: "1  4  5  ♭7  9" },
+  "7alt": { intervals: [0, 4, 10, 13, 15, 18], formula: "1  3  ♭7  ♭9  ♯9  ♯11" },
+  "Quartal (three-note)": { intervals: [0, 5, 10], formula: "1  4  ♭7" },
+  "Quartal (four-note)": { intervals: [0, 5, 10, 15], formula: "1  4  ♭7  ♯9" },
+  "Cluster (seconds)": { intervals: [0, 2, 4], formula: "1  2  3" },
+  "Power add octave": { intervals: [0, 7, 12], formula: "1  5  8" }
 } as const;
 
 export type ChordName = keyof typeof CHORD_DEFINITIONS;
