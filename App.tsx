@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useAudioPlayer } from "expo-audio";
 import {
   SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
@@ -43,6 +44,34 @@ export default function App() {
   const [drumPattern, setDrumPattern] = useState("Straight rock");
   const [drumSteps, setDrumSteps] = useState<Record<string, number[]>>({ Kick: [0, 8], Snare: [4, 12], "Closed hi-hat": [0, 2, 4, 6, 8, 10, 12, 14], "Open hi-hat": [] });
   const [drumRunning, setDrumRunning] = useState(false);
+  const [currentDrumStep, setCurrentDrumStep] = useState(-1);
+  const kickPlayer = useAudioPlayer(require("./assets/drums/kick.wav"));
+  const snarePlayer = useAudioPlayer(require("./assets/drums/snare.wav"));
+  const closedHatPlayer = useAudioPlayer(require("./assets/drums/closed-hat.wav"));
+  const openHatPlayer = useAudioPlayer(require("./assets/drums/open-hat.wav"));
+
+  const triggerDrumSound = (player: ReturnType<typeof useAudioPlayer>) => {
+    void player.seekTo(0).then(() => player.play()).catch(() => player.play());
+  };
+
+  useEffect(() => {
+    if (!drumRunning || tab !== "Drums") {
+      setCurrentDrumStep(-1);
+      return;
+    }
+    let step = 0;
+    const tick = () => {
+      setCurrentDrumStep(step);
+      if (drumSteps.Kick.includes(step)) triggerDrumSound(kickPlayer);
+      if (drumSteps.Snare.includes(step)) triggerDrumSound(snarePlayer);
+      if (drumSteps["Closed hi-hat"].includes(step)) triggerDrumSound(closedHatPlayer);
+      if (drumSteps["Open hi-hat"].includes(step)) triggerDrumSound(openHatPlayer);
+      step = (step + 1) % 16;
+    };
+    tick();
+    const interval = setInterval(tick, 60000 / drumBpm / 4);
+    return () => clearInterval(interval);
+  }, [drumRunning, tab, drumBpm, drumSteps, kickPlayer, snarePlayer, closedHatPlayer, openHatPlayer]);
 
   useEffect(() => {
     if (!sessionRunning) return;
@@ -280,7 +309,7 @@ export default function App() {
         <View style={styles.stepButtons}>
           <TouchableOpacity onPress={() => setDrumRunning(value => !value)} style={styles.primaryButton}><Text style={styles.buttonText}>{drumRunning ? "STOP LOOP" : "PLAY LOOP"}</Text></TouchableOpacity>
         </View>
-        <Text style={styles.hint}>Set your tempo, choose a groove and customise each drum hit below. Audio playback is the next development step.</Text>
+        <Text style={styles.hint}>The sequencer plays the four drum voices through your phone speaker. Change the tempo or edit the grid while stopped for predictable results.</Text>
       </View>
       <Text style={styles.sectionLabel}>PRESET GROOVES</Text>
       <View style={styles.choiceGrid}>
@@ -293,7 +322,7 @@ export default function App() {
           <View key={instrument} style={styles.drumRow}>
             <Text style={styles.drumInstrument}>{instrument}</Text>
             <View style={styles.drumSteps}>
-              {Array.from({ length: 16 }, (_, step) => <TouchableOpacity key={step} accessibilityRole="button" accessibilityLabel={instrument + " step " + (step + 1)} onPress={() => toggleDrumStep(instrument, step)} style={[styles.drumStep, drumSteps[instrument].includes(step) && styles.drumStepActive, step % 4 === 0 && styles.drumBeatStart]} />)}
+              {Array.from({ length: 16 }, (_, step) => <TouchableOpacity key={step} accessibilityRole="button" accessibilityLabel={instrument + " step " + (step + 1)} onPress={() => toggleDrumStep(instrument, step)} style={[styles.drumStep, drumSteps[instrument].includes(step) && styles.drumStepActive, currentDrumStep === step && styles.drumStepPlaying, step % 4 === 0 && styles.drumBeatStart]} />)}
             </View>
           </View>
         ))}
@@ -350,7 +379,7 @@ export default function App() {
       </View>
       <View style={styles.tabs}>
         {TABS.map(item => (
-          <TouchableOpacity key={item} onPress={() => { setTab(item); setSelectedNote(null); }} style={[styles.tab, tab === item && styles.tabActive]}>
+          <TouchableOpacity key={item} onPress={() => { setTab(item); setSelectedNote(null); if (item !== "Drums") setDrumRunning(false); }} style={[styles.tab, tab === item && styles.tabActive]}>
             <Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text>
           </TouchableOpacity>
         ))}
@@ -456,5 +485,6 @@ const styles = StyleSheet.create({
   drumSteps: { flexDirection: "row", justifyContent: "space-between", gap: 3 },
   drumStep: { flex: 1, height: 27, borderRadius: 4, backgroundColor: "#303A46", borderWidth: 1, borderColor: "#465363" },
   drumStepActive: { backgroundColor: "#B87925", borderColor: "#E8A642" },
+  drumStepPlaying: { borderColor: "#FFFFFF", borderWidth: 2, transform: [{ scale: 1.08 }] },
   drumBeatStart: { borderLeftWidth: 2, borderLeftColor: "#A5ADB8" }
 });
