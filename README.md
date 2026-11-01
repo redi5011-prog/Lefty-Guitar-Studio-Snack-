@@ -1,30 +1,28 @@
 # Lefty Guitar Studio
 
-A left-handed-first guitar and bass learning and practice app for Android and iOS.
+A left-handed-first guitar and bass learning and practice app for Android and iOS, built with Expo and React Native.
 
-## Milestone 0.1
+## Current application features
 
-This is the initial Expo / React Native application foundation.
+- Dark mobile interface with dedicated Fretboard, Scales, Chords, Practice and Bass sections.
+- Left-handed display convention retained: headstock on the left, body on the right, fret columns descending from left to right, high E at the top and low E at the bottom.
+- Interactive guitar and four-string bass fretboards, with notes calculated from standard tuning.
+- Root-note selection and transposition across all twelve pitch classes.
+- Ten scale types: major, natural minor, major pentatonic, minor pentatonic, blues and the seven diatonic modes.
+- Chord construction for major, minor, power, diminished, augmented, suspended, major seventh, minor seventh, dominant seventh and minor seven flat five chords.
+- Interval formulas and note spellings for scales and chords.
+- Practice exercise library and an elapsed-session timer.
 
-Included:
-- Dark mobile interface and primary navigation.
-- Left-handed fretboard display convention: headstock left, body right; fret columns descend left-to-right; high E at the top and low E at the bottom.
-- A minor pentatonic box 1 test pattern (frets 5–8), including fingering and a manual note-by-note stepper.
-- Initial music-theory data module.
+## Development status
 
-Not yet implemented:
-- Audio playback, metronome or drum engine.
-- Automatic play-along timing.
-- Chord and scale transposition engines.
-- Recording / multitrack Demo Studio.
-- Offline audio assets and persistent practice tracking.
+The current build establishes the interactive music-theory and practice foundations. Audio playback, audible metronome, backing tracks, recording, verified chord-voicing diagrams, saved progress and offline practice data are not yet implemented. These require dedicated implementation and device testing before they can be described as available features.
 
-## Run locally or in Expo Snack
+## Product rules
 
-This is an Expo project. Install dependencies and run `npx expo start` in an environment with Node.js, or import the project into a compatible Expo development environment.
+- Left-handed fretboard orientation is a display convention; it must not reverse musical note order or standard tablature reading order.
+- All fingering and chord-voicing diagrams must be checked against a left-handed instrument before production release.
+- Keep existing project identity, Expo configuration, Android package name and working fretboard behaviour intact when extending the app.
 
-## Product rule
+## Run locally
 
-The fretboard diagram orientation is a display convention. It must not reverse musical note order or standard tablature reading order.
-
-All fingering and diagrams must be checked against a left-handed instrument before production release.
+Install dependencies and run `npx expo start` in an environment with Node.js, or use the configured Expo Application Services build profiles.
