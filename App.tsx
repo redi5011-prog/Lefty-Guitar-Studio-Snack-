@@ -368,7 +368,8 @@ export default function App() {
         {tab === "Bass" ? renderFretboardScreen(true) : null}
         {tab === "Scales" ? renderScalesScreen() : null}
         {tab === "Chords" ? renderChordsScreen() : null}
-        {tab === "Practice" ? renderPracticeScreen() : null}\n        {tab === "Drums" ? renderDrumScreen() : null}
+        {tab === "Practice" ? renderPracticeScreen() : null}
+        {tab === "Drums" ? renderDrumScreen() : null}
       </ScrollView>
     </SafeAreaView>
   );
