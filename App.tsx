@@ -453,5 +453,18 @@ const styles = StyleSheet.create({
   buttonText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900", letterSpacing: 1 },
   exerciseCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 13, marginBottom: 8, backgroundColor: "#1B222B", borderRadius: 10, borderWidth: 1, borderColor: "#343D49" },
   exerciseActive: { borderColor: "#E8A642", backgroundColor: "#292319" },
-  duration: { color: "#E8A642", fontSize: 10, fontWeight: "800", marginTop: 7 },\n  tempoRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },\n  tempoButton: { width: 48, height: 44, borderRadius: 8, backgroundColor: "#303A46", alignItems: "center", justifyContent: "center" },\n  tempoButtonText: { color: "#FFFFFF", fontSize: 25, fontWeight: "700" },\n  tempoValue: { color: "#FFFFFF", fontSize: 32, fontWeight: "900" },\n  tempoUnit: { color: "#A5ADB8", fontSize: 13 },\n  recordButton: { flex: 1, backgroundColor: "#6F3035", padding: 13, borderRadius: 8, alignItems: "center" },\n  recordButtonActive: { backgroundColor: "#B32632" },\n  drumRow: { marginTop: 15 },\n  drumInstrument: { color: "#D6DCE4", fontSize: 11, fontWeight: "800", marginBottom: 7 },\n  drumSteps: { flexDirection: "row", justifyContent: "space-between", gap: 3 },\n  drumStep: { flex: 1, height: 27, borderRadius: 4, backgroundColor: "#303A46", borderWidth: 1, borderColor: "#465363" },\n  drumStepActive: { backgroundColor: "#B87925", borderColor: "#E8A642" },\n  drumBeatStart: { borderLeftWidth: 2, borderLeftColor: "#A5ADB8" }
+  duration: { color: "#E8A642", fontSize: 10, fontWeight: "800", marginTop: 7 },
+  tempoRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+  tempoButton: { width: 48, height: 44, borderRadius: 8, backgroundColor: "#303A46", alignItems: "center", justifyContent: "center" },
+  tempoButtonText: { color: "#FFFFFF", fontSize: 25, fontWeight: "700" },
+  tempoValue: { color: "#FFFFFF", fontSize: 32, fontWeight: "900" },
+  tempoUnit: { color: "#A5ADB8", fontSize: 13 },
+  recordButton: { flex: 1, backgroundColor: "#6F3035", padding: 13, borderRadius: 8, alignItems: "center" },
+  recordButtonActive: { backgroundColor: "#B32632" },
+  drumRow: { marginTop: 15 },
+  drumInstrument: { color: "#D6DCE4", fontSize: 11, fontWeight: "800", marginBottom: 7 },
+  drumSteps: { flexDirection: "row", justifyContent: "space-between", gap: 3 },
+  drumStep: { flex: 1, height: 27, borderRadius: 4, backgroundColor: "#303A46", borderWidth: 1, borderColor: "#465363" },
+  drumStepActive: { backgroundColor: "#B87925", borderColor: "#E8A642" },
+  drumBeatStart: { borderLeftWidth: 2, borderLeftColor: "#A5ADB8" }
 });
