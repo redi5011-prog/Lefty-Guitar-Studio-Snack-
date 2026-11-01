@@ -166,3 +166,81 @@ export function getNoteAt(stringName: string, fret: number): FretNote | undefine
     item => item.stringName === stringName && item.fret === fret
   );
 }
+
+
+export const STANDARD_BASS_5_TUNING = ["B", "E", "A", "D", "G"] as const;
+export const STANDARD_BASS_6_TUNING = ["B", "E", "A", "D", "G", "C"] as const;
+
+export type BassStringCount = 4 | 5 | 6;
+
+export function getBassTuning(stringCount: BassStringCount): string[] {
+  if (stringCount === 5) return [...STANDARD_BASS_5_TUNING];
+  if (stringCount === 6) return [...STANDARD_BASS_6_TUNING];
+  return [...STANDARD_BASS_4_TUNING];
+}
+
+export type VoicingPosition = {
+  stringName: string;
+  openNote: string;
+  fret: number | null;
+  note: string | null;
+};
+
+export type ChordVoicing = {
+  name: string;
+  instrument: "guitar" | "bass";
+  root: string;
+  chord: string;
+  positions: VoicingPosition[];
+  bassNote: string;
+  inversion: string;
+  fretSpan: number;
+  verified: true;
+};
+
+const OPEN_GUITAR_SHAPES: Record<string, { root: string; chord: string; frets: (number | null)[] }[]> = {
+  C: [{ root: "C", chord: "Major", frets: [null, 3, 2, 0, 1, 0] }],
+  G: [{ root: "G", chord: "Major", frets: [3, 2, 0, 0, 0, 3] }],
+  D: [{ root: "D", chord: "Major", frets: [null, null, 0, 2, 3, 2] }],
+  A: [{ root: "A", chord: "Major", frets: [null, 0, 2, 2, 2, 0] }],
+  E: [{ root: "E", chord: "Major", frets: [0, 2, 2, 1, 0, 0] }],
+  Am: [{ root: "A", chord: "Minor", frets: [null, 0, 2, 2, 1, 0] }],
+  Em: [{ root: "E", chord: "Minor", frets: [0, 2, 2, 0, 0, 0] }],
+  Dm: [{ root: "D", chord: "Minor", frets: [null, null, 0, 2, 3, 1] }]
+};
+
+export function getVerifiedOpenGuitarVoicings(root: string, chord: string): ChordVoicing[] {
+  const key = root.replace("♯", "#");
+  const shapeKey = chord === "Major" ? key : chord === "Minor" ? key + "m" : "";
+  const shape = OPEN_GUITAR_SHAPES[shapeKey]?.[0];
+  if (!shape) return [];
+  const tuning = [...STANDARD_GUITAR_TUNING];
+  const positions = tuning.map((openNote, index) => {
+    const fret = shape.frets[index];
+    return {
+      stringName: ["Low E", "A", "D", "G", "B", "High E"][index],
+      openNote,
+      fret,
+      note: fret === null ? null : getFretNote(openNote, fret)
+    };
+  });
+  const sounded = positions.filter(position => position.note !== null);
+  const chordPitches = getPitchClasses(getChordNotes(root, chord as ChordName));
+  if (sounded.some(position => !chordPitches.includes(noteToPitchClass(position.note!)))) return [];
+  const bassNote = sounded[0].note!;
+  const rootPitch = noteToPitchClass(root);
+  const bassInterval = (noteToPitchClass(bassNote) - rootPitch + 12) % 12;
+  const inversion = bassInterval === 0 ? "Root position" : bassInterval === 3 || bassInterval === 4 ? "First inversion" : bassInterval === 7 ? "Second inversion" : "Other inversion";
+  const fretted = sounded.map(position => position.fret!).filter(fret => fret > 0);
+  return [{
+    name: shapeKey + " open position",
+    instrument: "guitar",
+    root,
+    chord,
+    positions,
+    bassNote,
+    inversion,
+    fretSpan: fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0,
+    verified: true
+  }];
+}
