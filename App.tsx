@@ -33,6 +33,7 @@ export default function App() {
   const [root, setRoot] = useState("A");
   const [scale, setScale] = useState<ScaleName>("Minor pentatonic");
   const [chord, setChord] = useState<ChordName>("Minor");
+  const [theoryInstrument, setTheoryInstrument] = useState<"Guitar" | "Bass">("Guitar");
   const [selectedNote, setSelectedNote] = useState<{ note: string; stringName: string; fret: number } | null>(null);
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [sessionRunning, setSessionRunning] = useState(false);
@@ -51,6 +52,16 @@ export default function App() {
   const isBass = tab === "Bass";
   const fretColumns = Array.from({ length: 13 }, (_, index) => 12 - index);
   const currentExercise = EXERCISES[exerciseIndex];
+
+  const renderInstrumentPicker = () => (
+    <View style={styles.instrumentRow}>
+      {(["Guitar", "Bass"] as const).map(item => (
+        <TouchableOpacity key={item} onPress={() => { setTheoryInstrument(item); setSelectedNote(null); }} style={[styles.instrumentButton, theoryInstrument === item && styles.instrumentButtonActive]}>
+          <Text style={[styles.instrumentText, theoryInstrument === item && styles.instrumentTextActive]}>{item}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   const renderRootPicker = () => (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerRow}>
@@ -153,6 +164,8 @@ export default function App() {
       <Text style={styles.eyebrow}>SCALE LIBRARY</Text>
       <Text style={styles.title}>Scale explorer</Text>
       <Text style={styles.description}>Explore the intervals and notes that make up each scale. Change the root to transpose the scale.</Text>
+      <Text style={styles.sectionLabel}>INSTRUMENT</Text>
+      {renderInstrumentPicker()}
       <Text style={styles.sectionLabel}>ROOT NOTE</Text>
       {renderRootPicker()}
       <Text style={styles.sectionLabel}>SELECT A SCALE</Text>
@@ -165,6 +178,8 @@ export default function App() {
         <Text style={styles.summaryLabel}>INTERVAL FORMULA</Text>
         <Text style={styles.formula}>{SCALE_DEFINITIONS[scale].formula}</Text>
       </View>
+      <Text style={styles.sectionLabel}>{theoryInstrument.toUpperCase()} SCALE MAP · LEFT-HANDED</Text>
+      {renderFretboard(scaleNotes, theoryInstrument === "Bass")}
       <Text style={styles.sectionLabel}>PRACTICAL USE</Text>
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>How to practise it</Text>
@@ -188,6 +203,8 @@ export default function App() {
       <Text style={styles.eyebrow}>CHORD LIBRARY</Text>
       <Text style={styles.title}>Chord explorer</Text>
       <Text style={styles.description}>Build chords from intervals and see the notes that form each chord. Change the root to transpose it.</Text>
+      <Text style={styles.sectionLabel}>INSTRUMENT</Text>
+      {renderInstrumentPicker()}
       <Text style={styles.sectionLabel}>ROOT NOTE</Text>
       {renderRootPicker()}
       <Text style={styles.sectionLabel}>CHORD TYPE</Text>
@@ -212,6 +229,8 @@ export default function App() {
         <Text style={styles.summaryLabel}>INTERVAL FORMULA</Text>
         <Text style={styles.formula}>{CHORD_DEFINITIONS[chord].formula}</Text>
       </View>
+      <Text style={styles.sectionLabel}>{theoryInstrument.toUpperCase()} CHORD TONE MAP · LEFT-HANDED</Text>
+      {renderFretboard(chordNotes, theoryInstrument === "Bass")}
       <Text style={styles.sectionLabel}>CHORD CONSTRUCTION</Text>
       {chordNotes.map((note, index) => (
         <View key={note + index} style={styles.listRow}>
@@ -307,6 +326,11 @@ const styles = StyleSheet.create({
   description: { color: "#A5ADB8", fontSize: 13, lineHeight: 20, marginTop: 7 },
   sectionLabel: { color: "#87909D", fontSize: 10, fontWeight: "800", letterSpacing: 1.4, marginTop: 23, marginBottom: 9 },
   pickerRow: { gap: 7, paddingVertical: 2 },
+  instrumentRow: { flexDirection: "row", gap: 9 },
+  instrumentButton: { flex: 1, paddingVertical: 11, borderRadius: 8, alignItems: "center", backgroundColor: "#202731", borderWidth: 1, borderColor: "#343D49" },
+  instrumentButtonActive: { backgroundColor: "#3A2B19", borderColor: "#E8A642" },
+  instrumentText: { color: "#A5ADB8", fontSize: 12, fontWeight: "800" },
+  instrumentTextActive: { color: "#F4C77F" },
   pickerChip: { minWidth: 38, paddingHorizontal: 10, paddingVertical: 9, alignItems: "center", borderRadius: 8, backgroundColor: "#202731", borderWidth: 1, borderColor: "#343D49" },
   pickerChipActive: { backgroundColor: "#B87925", borderColor: "#E8A642" },
   pickerText: { color: "#C2CAD4", fontSize: 12, fontWeight: "700" },
