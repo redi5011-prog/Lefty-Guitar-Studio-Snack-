@@ -8,7 +8,9 @@ A left-handed-first guitar and bass learning and practice app for Android and iO
 - 41 chord and sonority entries spanning triads, suspended and power chords, sixth chords, seventh chords, ninths, elevenths, thirteenths, altered dominants, quartal structures and cluster sonorities.
 - Root-note transposition across all twelve equal-tempered pitch classes.
 - Interval formulas and generated note collections.
-- Instrument selector in the scale and chord explorers, with left-handed guitar and four-string bass note maps.
+- Instrument selector in the scale and chord explorers, with left-handed guitar and bass note maps.
+- Selectable four-, five- and six-string standard bass layouts (EADG, BEADG and BEADGC).
+- Eight curated open-position guitar major/minor shapes (C, G, D, A, E, Am, Em and Dm), checked against the selected chord tones.
 - Interactive guitar and bass fretboards using standard tuning.
 - Practice exercise library and elapsed-session timer.
 
@@ -24,7 +26,7 @@ A left-handed-first guitar and bass learning and practice app for Android and iO
 
 This is an expanding equal-tempered theory reference, not a claim to contain every musical system or every possible voicing. Some world-scale labels refer to equal-tempered approximations of traditions whose original tuning and performance practice may differ. The current note-name generator uses a compact sharp-based pitch spelling; a later notation pass should add context-sensitive enharmonic spelling.
 
-Chord entries describe pitch-class structures, not verified playable guitar/bass voicings. Guitar and bass voicing diagrams, inversions, movable shapes, alternate tunings, five- and six-string bass layouts, arpeggio fingering systems, audible playback, metronome/drum engine, recording, saved progress and offline data still require implementation and device testing.
+Chord entries describe pitch-class structures, not verified playable guitar/bass voicings. The eight curated open guitar shapes are a limited verified subset; they do not imply that every chord entry has a playable shape. Movable shapes, broader inversion coverage, bass-specific chord grips, alternate tunings, arpeggio fingering systems, audible playback, metronome/drum engine, recording, saved progress and offline data still require implementation and device testing.
 
 ## Product rules
 
