@@ -362,7 +362,7 @@ export default function App() {
             <Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
       <ScrollView contentContainerStyle={styles.content}>
         {tab === "Fretboard" ? renderFretboardScreen(false) : null}
         {tab === "Bass" ? renderFretboardScreen(true) : null}
