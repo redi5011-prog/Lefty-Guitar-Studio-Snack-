@@ -1,99 +1,294 @@
-import React, { useMemo, useState } from "react";
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View
+} from "react-native";
+import {
+  CHORD_DEFINITIONS, ChordName, getChordNotes, getFretNote, getPitchClasses,
+  getScaleNotes, NOTE_NAMES, SCALE_DEFINITIONS, ScaleName, STANDARD_BASS_4_TUNING,
+  STANDARD_GUITAR_TUNING
+} from "./src/musicTheory";
 
-type Note = { stringName: string; fret: number; note: string; finger: number };
-const pattern: Note[] = [
-  { stringName: "Low E", fret: 5, note: "A", finger: 1 },
-  { stringName: "Low E", fret: 8, note: "C", finger: 4 },
-  { stringName: "A", fret: 5, note: "D", finger: 1 },
-  { stringName: "A", fret: 7, note: "E", finger: 3 },
-  { stringName: "D", fret: 5, note: "G", finger: 1 },
-  { stringName: "D", fret: 7, note: "A", finger: 3 },
-  { stringName: "G", fret: 5, note: "C", finger: 1 },
-  { stringName: "G", fret: 7, note: "D", finger: 3 },
-  { stringName: "B", fret: 5, note: "E", finger: 1 },
-  { stringName: "B", fret: 8, note: "G", finger: 4 },
-  { stringName: "High E", fret: 5, note: "A", finger: 1 },
-  { stringName: "High E", fret: 8, note: "C", finger: 4 }
+type TabName = "Fretboard" | "Scales" | "Chords" | "Practice" | "Bass";
+type Exercise = { title: string; detail: string; duration: string };
+
+const TABS: TabName[] = ["Fretboard", "Scales", "Chords", "Practice", "Bass"];
+const SCALE_NAMES = Object.keys(SCALE_DEFINITIONS) as ScaleName[];
+const CHORD_NAMES = Object.keys(CHORD_DEFINITIONS) as ChordName[];
+const ROOTS = [...NOTE_NAMES];
+const EXERCISES: Exercise[] = [
+  { title: "Chromatic warm-up", detail: "Play four notes per string, slowly and evenly. Keep the fretting hand relaxed.", duration: "5 min" },
+  { title: "Pentatonic accuracy", detail: "Play the selected minor pentatonic scale ascending and descending. Aim for clean note changes.", duration: "8 min" },
+  { title: "String crossing", detail: "Move between adjacent strings without catching neighbouring strings. Use a controlled picking motion.", duration: "5 min" },
+  { title: "Chord changes", detail: "Alternate between two chord shapes. Lift only as much as needed and keep the rhythm steady.", duration: "8 min" },
+  { title: "Free practice", detail: "Choose a scale or chord and work through it at your own pace.", duration: "Open" }
 ];
-const strings = ["High E", "B", "G", "D", "A", "Low E"];
-const frets = [8, 7, 6, 5];
+
+function formatTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const remainder = (seconds % 60).toString().padStart(2, "0");
+  return minutes + ":" + remainder;
+}
 
 export default function App() {
-  const [tab, setTab] = useState("Fretboard");
-  const [step, setStep] = useState(0);
-  const current = pattern[step];
-  const sequence = useMemo(() => pattern.map(p => p.note), []);
+  const [tab, setTab] = useState<TabName>("Fretboard");
+  const [root, setRoot] = useState("A");
+  const [scale, setScale] = useState<ScaleName>("Minor pentatonic");
+  const [chord, setChord] = useState<ChordName>("Minor");
+  const [selectedNote, setSelectedNote] = useState<{ note: string; stringName: string; fret: number } | null>(null);
+  const [exerciseIndex, setExerciseIndex] = useState(0);
+  const [sessionRunning, setSessionRunning] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!sessionRunning) return;
+    const timer = setInterval(() => setElapsed(value => value + 1), 1000);
+    return () => clearInterval(timer);
+  }, [sessionRunning]);
+
+  const scaleNotes = useMemo(() => getScaleNotes(root, scale), [root, scale]);
+  const chordNotes = useMemo(() => getChordNotes(root, chord), [root, chord]);
+  const activeNotes = tab === "Chords" ? chordNotes : scaleNotes;
+  const activePitchClasses = useMemo(() => getPitchClasses(activeNotes), [activeNotes]);
+  const isBass = tab === "Bass";
+  const tuning = isBass ? STANDARD_BASS_4_TUNING : STANDARD_GUITAR_TUNING;
+  const stringRows = isBass
+    ? [{ name: "G", pitch: "G" }, { name: "D", pitch: "D" }, { name: "A", pitch: "A" }, { name: "Low E", pitch: "E" }]
+    : [{ name: "High E", pitch: "E" }, { name: "B", pitch: "B" }, { name: "G", pitch: "G" }, { name: "D", pitch: "D" }, { name: "A", pitch: "A" }, { name: "Low E", pitch: "E" }];
+  const fretColumns = Array.from({ length: 13 }, (_, index) => 12 - index);
+  const currentExercise = EXERCISES[exerciseIndex];
+
+  const renderRootPicker = () => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerRow}>
+      {ROOTS.map(note => (
+        <TouchableOpacity key={note} onPress={() => { setRoot(note); setSelectedNote(null); }} style={[styles.pickerChip, root === note && styles.pickerChipActive]}>
+          <Text style={[styles.pickerText, root === note && styles.pickerTextActive]}>{note}</Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+
+  const renderScalePicker = () => (
+    <View style={styles.choiceGrid}>
+      {SCALE_NAMES.map(name => (
+        <TouchableOpacity key={name} onPress={() => setScale(name)} style={[styles.choiceChip, scale === name && styles.choiceChipActive]}>
+          <Text style={[styles.choiceText, scale === name && styles.choiceTextActive]}>{name}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderFretboard = (noteNames: string[], bass: boolean) => {
+    const pitchClasses = getPitchClasses(noteNames);
+    const rows = bass
+      ? [{ name: "G", open: "G" }, { name: "D", open: "D" }, { name: "A", open: "A" }, { name: "Low E", open: "E" }]
+      : [{ name: "High E", open: "E" }, { name: "B", open: "B" }, { name: "G", open: "G" }, { name: "D", open: "D" }, { name: "A", open: "A" }, { name: "Low E", open: "E" }];
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.boardScroll}>
+        <View style={styles.fretboard}>
+          <View style={styles.fretHeader}>
+            <Text style={styles.stringLabel}>STRING</Text>
+            {fretColumns.map(fret => <Text key={fret} style={styles.fretNumber}>{fret === 0 ? "OPEN" : fret}</Text>)}
+          </View>
+          {rows.map(row => (
+            <View key={row.name} style={styles.stringRow}>
+              <Text style={styles.stringLabel}>{row.name}</Text>
+              {fretColumns.map(fret => {
+                const note = getFretNote(row.open, fret);
+                const pitch = getPitchClasses([note])[0];
+                const included = pitchClasses.includes(pitch);
+                const isRoot = pitch === getPitchClasses([root])[0];
+                const selected = selectedNote?.stringName === row.name && selectedNote?.fret === fret;
+                return (
+                  <View key={fret} style={styles.fretCell}>
+                    {included ? (
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={note + ", " + row.name + " string, fret " + fret}
+                        onPress={() => setSelectedNote({ note, stringName: row.name, fret })}
+                        style={[styles.noteDot, isRoot && styles.rootDot, selected && styles.selectedDot]}
+                      >
+                        <Text style={[styles.noteText, isRoot && styles.rootNoteText]}>{note}</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    );
+  };
+
+  const renderFretboardScreen = (bass: boolean) => (
+    <>
+      <Text style={styles.eyebrow}>{bass ? "BASS TOOLKIT" : "GUITAR TOOLKIT"}</Text>
+      <Text style={styles.title}>{bass ? "Bass fretboard" : "Fretboard explorer"}</Text>
+      <Text style={styles.description}>Choose a root and scale. Notes are calculated across the instrument in standard tuning.</Text>
+      <Text style={styles.sectionLabel}>ROOT NOTE</Text>
+      {renderRootPicker()}
+      <Text style={styles.sectionLabel}>SCALE</Text>
+      {renderScalePicker()}
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryLabel}>SELECTED SCALE</Text>
+        <Text style={styles.summaryTitle}>{root} {scale}</Text>
+        <Text style={styles.summaryNotes}>{scaleNotes.join("  ·  ")}</Text>
+      </View>
+      <View style={styles.orientation}><Text style={styles.orientationText}>HEADSTOCK  ←</Text><Text style={styles.orientationText}>→  BODY</Text></View>
+      {renderFretboard(scaleNotes, bass)}
+      <View style={styles.legendRow}>
+        <View style={[styles.legendDot, styles.rootDot]} /><Text style={styles.legendText}>Root note</Text>
+        <View style={styles.legendDot} /><Text style={styles.legendText}>Scale note</Text>
+      </View>
+      {selectedNote ? (
+        <View style={styles.selectedCard}>
+          <Text style={styles.summaryLabel}>SELECTED NOTE</Text>
+          <Text style={styles.selectedNote}>{selectedNote.note}</Text>
+          <Text style={styles.description}>{selectedNote.stringName} string · fret {selectedNote.fret}</Text>
+        </View>
+      ) : (
+        <Text style={styles.hint}>Tap any highlighted note to inspect its position.</Text>
+      )}
+      <Text style={styles.footer}>LEFT-HANDED DISPLAY · HIGH E AT TOP · LOW E AT BOTTOM</Text>
+    </>
+  );
+
+  const renderScalesScreen = () => (
+    <>
+      <Text style={styles.eyebrow}>SCALE LIBRARY</Text>
+      <Text style={styles.title}>Scale explorer</Text>
+      <Text style={styles.description}>Explore the intervals and notes that make up each scale. Change the root to transpose the scale.</Text>
+      <Text style={styles.sectionLabel}>ROOT NOTE</Text>
+      {renderRootPicker()}
+      <Text style={styles.sectionLabel}>SELECT A SCALE</Text>
+      {renderScalePicker()}
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryLabel}>SCALE NOTES</Text>
+        <Text style={styles.summaryTitle}>{root} {scale}</Text>
+        <Text style={styles.summaryNotes}>{scaleNotes.join("   ·   ")}</Text>
+        <View style={styles.rule} />
+        <Text style={styles.summaryLabel}>INTERVAL FORMULA</Text>
+        <Text style={styles.formula}>{SCALE_DEFINITIONS[scale].formula}</Text>
+      </View>
+      <Text style={styles.sectionLabel}>PRACTICAL USE</Text>
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>How to practise it</Text>
+        <Text style={styles.description}>Play the notes slowly in sequence, then reverse the order. Once the fingering is comfortable, create short phrases using only these notes. Keep the root note as your point of resolution.</Text>
+      </View>
+      <Text style={styles.sectionLabel}>ALL AVAILABLE SCALES</Text>
+      {SCALE_NAMES.map(name => (
+        <TouchableOpacity key={name} onPress={() => setScale(name)} style={styles.listRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.listTitle}>{name}</Text>
+            <Text style={styles.listDetail}>{getScaleNotes(root, name).join(" · ")}</Text>
+          </View>
+          <Text style={styles.listArrow}>{scale === name ? "✓" : "›"}</Text>
+        </TouchableOpacity>
+      ))}
+    </>
+  );
+
+  const renderChordsScreen = () => (
+    <>
+      <Text style={styles.eyebrow}>CHORD LIBRARY</Text>
+      <Text style={styles.title}>Chord explorer</Text>
+      <Text style={styles.description}>Build chords from intervals and see the notes that form each chord. Change the root to transpose it.</Text>
+      <Text style={styles.sectionLabel}>ROOT NOTE</Text>
+      {renderRootPicker()}
+      <Text style={styles.sectionLabel}>CHORD TYPE</Text>
+      <View style={styles.choiceGrid}>
+        {CHORD_NAMES.map(name => (
+          <TouchableOpacity key={name} onPress={() => setChord(name)} style={[styles.choiceChip, chord === name && styles.choiceChipActive]}>
+            <Text style={[styles.choiceText, chord === name && styles.choiceTextActive]}>{name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryLabel}>CHORD NOTES</Text>
+        <Text style={styles.summaryTitle}>{root} {chord}</Text>
+        <View style={styles.chordNotesRow}>
+          {chordNotes.map((note, index) => (
+            <View key={note + index} style={[styles.chordNote, index === 0 && styles.chordRoot]}>
+              <Text style={styles.chordNoteText}>{note}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.rule} />
+        <Text style={styles.summaryLabel}>INTERVAL FORMULA</Text>
+        <Text style={styles.formula}>{CHORD_DEFINITIONS[chord].formula}</Text>
+      </View>
+      <Text style={styles.sectionLabel}>CHORD CONSTRUCTION</Text>
+      {chordNotes.map((note, index) => (
+        <View key={note + index} style={styles.listRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.listTitle}>{index === 0 ? "Root" : "Chord tone " + (index + 1)}</Text>
+            <Text style={styles.listDetail}>Note {note}</Text>
+          </View>
+          <Text style={styles.chordTone}>{CHORD_DEFINITIONS[chord].formula.split("  ")[index]}</Text>
+        </View>
+      ))}
+      <Text style={styles.hint}>These are the chord tones. A later voicing library will add verified left-handed fingering diagrams for guitar and bass.</Text>
+    </>
+  );
+
+  const renderPracticeScreen = () => (
+    <>
+      <Text style={styles.eyebrow}>PRACTICE ROOM</Text>
+      <Text style={styles.title}>Practice studio</Text>
+      <Text style={styles.description}>Choose a focused exercise and track the time you spend practising. Your session timer runs while the app is open.</Text>
+      <View style={styles.timerCard}>
+        <Text style={styles.summaryLabel}>SESSION TIMER</Text>
+        <Text style={styles.timer}>{formatTime(elapsed)}</Text>
+        <Text style={styles.description}>{sessionRunning ? "Session in progress" : "Ready when you are"}</Text>
+        <View style={styles.stepButtons}>
+          <TouchableOpacity onPress={() => setSessionRunning(value => !value)} style={styles.primaryButton}>
+            <Text style={styles.buttonText}>{sessionRunning ? "PAUSE SESSION" : "START SESSION"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setSessionRunning(false); setElapsed(0); }} style={styles.secondaryButton}>
+            <Text style={styles.buttonText}>RESET</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <Text style={styles.sectionLabel}>EXERCISE PLAN</Text>
+      {EXERCISES.map((exercise, index) => (
+        <TouchableOpacity key={exercise.title} onPress={() => setExerciseIndex(index)} style={[styles.exerciseCard, exerciseIndex === index && styles.exerciseActive]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.listTitle}>{exercise.title}</Text>
+            <Text style={styles.listDetail}>{exercise.detail}</Text>
+          </View>
+          <Text style={styles.duration}>{exercise.duration}</Text>
+        </TouchableOpacity>
+      ))}
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>Current exercise</Text>
+        <Text style={styles.listTitle}>{currentExercise.title}</Text>
+        <Text style={styles.description}>{currentExercise.detail}</Text>
+        <Text style={styles.duration}>Suggested duration: {currentExercise.duration}</Text>
+      </View>
+      <Text style={styles.hint}>This first practice module tracks elapsed time locally. An audible metronome, backing tracks and recording tools will be added as dedicated audio features.</Text>
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.brand}>LEFTY <Text style={styles.brandAccent}>GUITAR STUDIO</Text></Text>
-        <Text style={styles.subhead}>GUITAR • BASS • PRACTICE</Text>
+        <Text style={styles.subhead}>GUITAR  ·  BASS  ·  PRACTICE</Text>
       </View>
-      <View style={styles.tabs}>
-        {["Fretboard", "Chords", "Scales", "Practice"].map(item => (
-          <TouchableOpacity key={item} onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabs} contentContainerStyle={styles.tabsContent}>
+        {TABS.map(item => (
+          <TouchableOpacity key={item} onPress={() => { setTab(item); setSelectedNote(null); }} style={[styles.tab, tab === item && styles.tabActive]}>
             <Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.eyebrow}>{tab.toUpperCase()} EXPLORER</Text>
-        <Text style={styles.title}>{tab === "Fretboard" ? "A minor pentatonic" : tab === "Scales" ? "Scale explorer" : tab === "Chords" ? "Chord explorer" : "Practice studio"}</Text>
-        <Text style={styles.description}>
-          {tab === "Fretboard" ? "Box 1 · Frets 5–8 · Standard tuning" : "This section is being built. The fretboard orientation and core music data are established first."}
-        </Text>
-        {tab === "Fretboard" ? (
-          <>
-            <View style={styles.orientation}><Text style={styles.orientationText}>HEADSTOCK  ←</Text><Text style={styles.orientationText}>→  BODY</Text></View>
-            <View style={styles.fretboard}>
-              <View style={styles.fretHeader}>
-                <View style={styles.stringLabel} />
-                {frets.map(f => <Text key={f} style={styles.fretNumber}>{f}</Text>)}
-              </View>
-              {strings.map((s, row) => (
-                <View key={s} style={styles.stringRow}>
-                  <Text style={styles.stringLabel}>{s}</Text>
-                  {frets.map(f => {
-                    const note = pattern.find(p => p.stringName === s && p.fret === f);
-                    const active = note && current.stringName === s && current.fret === f;
-                    return <View key={f} style={styles.fretCell}>
-                      {note ? <TouchableOpacity
-                        accessibilityRole="button"
-                        accessibilityLabel={`${note.note}, ${s} string, fret ${f}, finger ${note.finger}`}
-                        onPress={() => setStep(pattern.findIndex(p => p.stringName === s && p.fret === f))}
-                        style={[styles.noteDot, active && styles.noteActive]}
-                      >
-                        <Text style={styles.noteText}>{note.note}</Text>
-                        <Text style={styles.fingerText}>{note.finger}</Text>
-                      </TouchableOpacity> : null}
-                    </View>;
-                  })}
-                </View>
-              ))}
-            </View>
-            <View style={styles.stepCard}>
-              <View>
-                <Text style={styles.stepLabel}>CURRENT NOTE · {step + 1} OF {pattern.length}</Text>
-                <Text style={styles.stepNote}>{current.note}</Text>
-                <Text style={styles.stepDetail}>{current.stringName} string · fret {current.fret} · finger {current.finger}</Text>
-              </View>
-              <View style={styles.stepButtons}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(Math.max(0, step - 1))}><Text style={styles.buttonText}>BACK</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.primaryButton} onPress={() => setStep((step + 1) % pattern.length)}><Text style={styles.buttonText}>NEXT NOTE</Text></TouchableOpacity>
-              </View>
-            </View>
-            <Text style={styles.sequenceLabel}>ASCENDING NOTE SEQUENCE</Text>
-            <Text style={styles.sequence}>{sequence.join("  ·  ")}</Text>
-          </>
-        ) : (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderTitle}>Coming in the next build</Text>
-            <Text style={styles.description}>The navigation is in place. We'll add each tool with validated note data and left-handed diagrams rather than filling the screen with inaccurate examples.</Text>
-          </View>
-        )}
-        <Text style={styles.footer}>LEFT-HANDED VIEW · HIGH E AT TOP · LOW E AT BOTTOM</Text>
+        {tab === "Fretboard" ? renderFretboardScreen(false) : null}
+        {tab === "Bass" ? renderFretboardScreen(true) : null}
+        {tab === "Scales" ? renderScalesScreen() : null}
+        {tab === "Chords" ? renderChordsScreen() : null}
+        {tab === "Practice" ? renderPracticeScreen() : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -101,42 +296,76 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#101318" },
-  header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 13 },
   brand: { color: "#F3F4F6", fontSize: 19, fontWeight: "900", letterSpacing: 1.2 },
   brandAccent: { color: "#E8A642" },
   subhead: { color: "#87909D", fontSize: 10, letterSpacing: 2, marginTop: 5 },
-  tabs: { flexDirection: "row", paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: "#2A303A" },
-  tab: { flex: 1, paddingVertical: 13, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  tabs: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: "#2A303A" },
+  tabsContent: { paddingHorizontal: 10 },
+  tab: { paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 2, borderBottomColor: "transparent" },
   tabActive: { borderBottomColor: "#E8A642" },
-  tabText: { color: "#87909D", fontSize: 11, fontWeight: "700" },
+  tabText: { color: "#87909D", fontSize: 12, fontWeight: "700" },
   tabTextActive: { color: "#F3F4F6" },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 18, paddingBottom: 44 },
   eyebrow: { color: "#E8A642", fontSize: 10, fontWeight: "800", letterSpacing: 2 },
   title: { color: "#F3F4F6", fontSize: 26, fontWeight: "800", marginTop: 7 },
   description: { color: "#A5ADB8", fontSize: 13, lineHeight: 20, marginTop: 7 },
-  orientation: { flexDirection: "row", justifyContent: "space-between", marginTop: 26, marginBottom: 8 },
+  sectionLabel: { color: "#87909D", fontSize: 10, fontWeight: "800", letterSpacing: 1.4, marginTop: 23, marginBottom: 9 },
+  pickerRow: { gap: 7, paddingVertical: 2 },
+  pickerChip: { minWidth: 38, paddingHorizontal: 10, paddingVertical: 9, alignItems: "center", borderRadius: 8, backgroundColor: "#202731", borderWidth: 1, borderColor: "#343D49" },
+  pickerChipActive: { backgroundColor: "#B87925", borderColor: "#E8A642" },
+  pickerText: { color: "#C2CAD4", fontSize: 12, fontWeight: "700" },
+  pickerTextActive: { color: "#FFFFFF" },
+  choiceGrid: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  choiceChip: { paddingHorizontal: 11, paddingVertical: 9, borderRadius: 8, backgroundColor: "#202731", borderWidth: 1, borderColor: "#343D49" },
+  choiceChipActive: { backgroundColor: "#3A2B19", borderColor: "#E8A642" },
+  choiceText: { color: "#A5ADB8", fontSize: 11, fontWeight: "700" },
+  choiceTextActive: { color: "#F4C77F" },
+  summaryCard: { backgroundColor: "#1B222B", borderRadius: 12, padding: 16, marginTop: 18, borderWidth: 1, borderColor: "#343D49" },
+  summaryLabel: { color: "#E8A642", fontSize: 9, fontWeight: "800", letterSpacing: 1.3 },
+  summaryTitle: { color: "#F3F4F6", fontSize: 21, fontWeight: "800", marginTop: 5 },
+  summaryNotes: { color: "#D6DCE4", fontSize: 14, lineHeight: 24, marginTop: 9 },
+  formula: { color: "#FFFFFF", fontSize: 17, fontWeight: "700", marginTop: 8, letterSpacing: 1 },
+  rule: { height: 1, backgroundColor: "#343D49", marginVertical: 15 },
+  orientation: { flexDirection: "row", justifyContent: "space-between", marginTop: 24, marginBottom: 8 },
   orientationText: { color: "#87909D", fontSize: 9, fontWeight: "800", letterSpacing: 1 },
-  fretboard: { backgroundColor: "#1A2028", borderRadius: 12, padding: 10, borderWidth: 1, borderColor: "#343D49" },
-  fretHeader: { flexDirection: "row", height: 26 },
-  stringRow: { flexDirection: "row", height: 49, alignItems: "center" },
-  stringLabel: { width: 54, color: "#A5ADB8", fontSize: 10, fontWeight: "700" },
-  fretNumber: { flex: 1, color: "#87909D", textAlign: "center", fontSize: 10, fontWeight: "700" },
-  fretCell: { flex: 1, height: 49, borderLeftWidth: 1, borderLeftColor: "#596574", alignItems: "center", justifyContent: "center" },
-  noteDot: { width: 31, height: 31, borderRadius: 16, backgroundColor: "#34485A", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#60768A" },
-  noteActive: { backgroundColor: "#E8A642", borderColor: "#FFD18A", transform: [{ scale: 1.16 }] },
-  noteText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" },
-  fingerText: { color: "#D4DCE5", fontSize: 7, marginTop: -1 },
-  stepCard: { backgroundColor: "#1B222B", borderRadius: 12, padding: 16, marginTop: 18, borderWidth: 1, borderColor: "#343D49" },
-  stepLabel: { color: "#E8A642", fontSize: 9, fontWeight: "800", letterSpacing: 1.3 },
-  stepNote: { color: "#FFFFFF", fontSize: 35, fontWeight: "900", marginTop: 3 },
-  stepDetail: { color: "#A5ADB8", fontSize: 12, marginTop: 2 },
-  stepButtons: { flexDirection: "row", marginTop: 15, gap: 9 },
+  boardScroll: { paddingBottom: 3 },
+  fretboard: { backgroundColor: "#1A2028", borderRadius: 12, padding: 9, borderWidth: 1, borderColor: "#343D49" },
+  fretHeader: { flexDirection: "row", height: 27, alignItems: "center" },
+  stringRow: { flexDirection: "row", height: 46, alignItems: "center" },
+  stringLabel: { width: 48, color: "#A5ADB8", fontSize: 9, fontWeight: "700" },
+  fretNumber: { width: 38, color: "#87909D", textAlign: "center", fontSize: 9, fontWeight: "700" },
+  fretCell: { width: 38, height: 46, borderLeftWidth: 1, borderLeftColor: "#596574", alignItems: "center", justifyContent: "center" },
+  noteDot: { width: 28, height: 28, borderRadius: 15, backgroundColor: "#34485A", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#60768A" },
+  rootDot: { backgroundColor: "#B87925", borderColor: "#E8A642" },
+  selectedDot: { borderWidth: 2, borderColor: "#FFFFFF", transform: [{ scale: 1.12 }] },
+  noteText: { color: "#FFFFFF", fontSize: 9, fontWeight: "900" },
+  rootNoteText: { color: "#FFFFFF" },
+  legendRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12 },
+  legendDot: { width: 10, height: 10, borderRadius: 6, backgroundColor: "#34485A", borderWidth: 1, borderColor: "#60768A", marginLeft: 9 },
+  legendText: { color: "#A5ADB8", fontSize: 10 },
+  selectedCard: { backgroundColor: "#1B222B", borderRadius: 10, padding: 14, marginTop: 16, borderWidth: 1, borderColor: "#343D49" },
+  selectedNote: { color: "#FFFFFF", fontSize: 32, fontWeight: "900", marginTop: 4 },
+  hint: { color: "#87909D", fontSize: 11, lineHeight: 17, marginTop: 16 },
+  footer: { color: "#687382", fontSize: 8, letterSpacing: 1, textAlign: "center", marginTop: 25 },
+  infoCard: { backgroundColor: "#1B222B", borderRadius: 11, padding: 15, marginTop: 13, borderWidth: 1, borderColor: "#343D49" },
+  infoTitle: { color: "#E8A642", fontSize: 12, fontWeight: "800", marginBottom: 6 },
+  listRow: { flexDirection: "row", alignItems: "center", paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: "#2A303A" },
+  listTitle: { color: "#F3F4F6", fontSize: 13, fontWeight: "700" },
+  listDetail: { color: "#87909D", fontSize: 11, lineHeight: 17, marginTop: 4 },
+  listArrow: { color: "#E8A642", fontSize: 20, paddingHorizontal: 8 },
+  chordNotesRow: { flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 13 },
+  chordNote: { width: 43, height: 43, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "#34485A", borderWidth: 1, borderColor: "#60768A" },
+  chordRoot: { backgroundColor: "#B87925", borderColor: "#E8A642" },
+  chordNoteText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  chordTone: { color: "#E8A642", fontSize: 14, fontWeight: "800", paddingHorizontal: 12 },
+  timerCard: { backgroundColor: "#1B222B", borderRadius: 12, padding: 17, marginTop: 18, borderWidth: 1, borderColor: "#343D49" },
+  timer: { color: "#FFFFFF", fontSize: 44, fontWeight: "900", fontVariant: ["tabular-nums"], marginTop: 7 },
+  stepButtons: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 15 },
   primaryButton: { flex: 1, backgroundColor: "#B87925", padding: 13, borderRadius: 8, alignItems: "center" },
   secondaryButton: { padding: 13, borderRadius: 8, borderWidth: 1, borderColor: "#596574", minWidth: 82, alignItems: "center" },
   buttonText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900", letterSpacing: 1 },
-  sequenceLabel: { color: "#87909D", fontSize: 9, fontWeight: "800", letterSpacing: 1.3, marginTop: 22 },
-  sequence: { color: "#F3F4F6", fontSize: 12, marginTop: 8, lineHeight: 22 },
-  placeholder: { marginTop: 25, padding: 18, borderRadius: 12, backgroundColor: "#1B222B", borderWidth: 1, borderColor: "#343D49" },
-  placeholderTitle: { color: "#F3F4F6", fontSize: 16, fontWeight: "800" },
-  footer: { color: "#687382", fontSize: 8, letterSpacing: 1, textAlign: "center", marginTop: 28 }
+  exerciseCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 13, marginBottom: 8, backgroundColor: "#1B222B", borderRadius: 10, borderWidth: 1, borderColor: "#343D49" },
+  exerciseActive: { borderColor: "#E8A642", backgroundColor: "#292319" },
+  duration: { color: "#E8A642", fontSize: 10, fontWeight: "800", marginTop: 7 }
 });
