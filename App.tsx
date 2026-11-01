@@ -86,8 +86,12 @@ export default function App() {
 
   const renderFretboard = (noteNames: string[], bass: boolean) => {
     const pitchClasses = getPitchClasses(noteNames);
+    const bassTuning = getBassTuning(bassStringCount);
     const rows = bass
-      ? [{ name: "G", open: "G" }, { name: "D", open: "D" }, { name: "A", open: "A" }, { name: "Low E", open: "E" }]
+      ? bassTuning.slice().reverse().map((open, index) => ({
+          name: index === 0 ? "High " + open : index === bassTuning.length - 1 ? "Low " + open : open,
+          open
+        }))
       : [{ name: "High E", open: "E" }, { name: "B", open: "B" }, { name: "G", open: "G" }, { name: "D", open: "D" }, { name: "A", open: "A" }, { name: "Low E", open: "E" }];
     return (
       <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.boardScroll}>
@@ -132,6 +136,7 @@ export default function App() {
       <Text style={styles.eyebrow}>{bass ? "BASS TOOLKIT" : "GUITAR TOOLKIT"}</Text>
       <Text style={styles.title}>{bass ? "Bass fretboard" : "Fretboard explorer"}</Text>
       <Text style={styles.description}>Choose a root and scale. Notes are calculated across the instrument in standard tuning.</Text>
+      {bass ? <><Text style={styles.sectionLabel}>BASS STRING COUNT</Text><View style={styles.instrumentRow}>{([4, 5, 6] as BassStringCount[]).map(count => <TouchableOpacity key={count} onPress={() => { setBassStringCount(count); setSelectedNote(null); }} style={[styles.instrumentButton, bassStringCount === count && styles.instrumentButtonActive]}><Text style={[styles.instrumentText, bassStringCount === count && styles.instrumentTextActive]}>{count} STRING</Text></TouchableOpacity>)}</View></> : null}
       <Text style={styles.sectionLabel}>ROOT NOTE</Text>
       {renderRootPicker()}
       <Text style={styles.sectionLabel}>SCALE</Text>
