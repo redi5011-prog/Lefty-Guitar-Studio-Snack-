@@ -3,7 +3,7 @@ import {
   SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 import {
-  CHORD_DEFINITIONS, ChordName, getChordNotes, getFretNote, getPitchClasses,
+  CHORD_DEFINITIONS, ChordName, getChordNotes, getFretNote, getPitchClasses, getVerifiedOpenGuitarVoicings, getBassTuning, BassStringCount,
   getScaleNotes, NOTE_NAMES, SCALE_DEFINITIONS, ScaleName
 } from "./src/musicTheory";
 
@@ -34,6 +34,7 @@ export default function App() {
   const [scale, setScale] = useState<ScaleName>("Minor pentatonic");
   const [chord, setChord] = useState<ChordName>("Minor");
   const [theoryInstrument, setTheoryInstrument] = useState<"Guitar" | "Bass">("Guitar");
+  const [bassStringCount, setBassStringCount] = useState<BassStringCount>(4);
   const [selectedNote, setSelectedNote] = useState<{ note: string; stringName: string; fret: number } | null>(null);
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [sessionRunning, setSessionRunning] = useState(false);
@@ -241,7 +242,7 @@ export default function App() {
           <Text style={styles.chordTone}>{CHORD_DEFINITIONS[chord].formula.split("  ")[index]}</Text>
         </View>
       ))}
-      <Text style={styles.hint}>These are the chord tones. A later voicing library will add verified left-handed fingering diagrams for guitar and bass.</Text>
+      <Text style={styles.sectionLabel}>VERIFIED OPEN GUITAR SHAPE</Text>\n      {theoryInstrument === "Guitar" && getVerifiedOpenGuitarVoicings(root, chord).length ? getVerifiedOpenGuitarVoicings(root, chord).map(voicing => <View key={voicing.name} style={styles.infoCard}><Text style={styles.infoTitle}>{voicing.name} · {voicing.inversion}</Text><Text style={styles.listDetail}>String order, low to high: {voicing.positions.map(position => position.fret === null ? "X" : position.fret === 0 ? "0" : String(position.fret)).join("  ")}</Text><Text style={styles.listDetail}>Notes: {voicing.positions.filter(position => position.note).map(position => position.note).join(" · ")}</Text><Text style={styles.listDetail}>Bass note: {voicing.bassNote} · verified against the selected chord tones</Text></View>) : <Text style={styles.hint}>No curated verified open-position shape is currently available for this root and chord. The fretboard above remains a chord-tone map, not a fingering diagram.</Text>}\n      <Text style={styles.hint}>Only curated open-position major and minor shapes are shown here. Movable shapes, inversions and bass-specific chord grips are still to be added; unsupported shapes are deliberately not invented.</Text>
     </>
   );
 
