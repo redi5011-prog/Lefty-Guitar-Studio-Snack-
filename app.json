@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Lefty Guitar Studio",
+    "slug": "lefty-guitar-studio",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.leftyguitarstudio.app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.leftyguitarstudio.app"
+    }
+  }
+}
