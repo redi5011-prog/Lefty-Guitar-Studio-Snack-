@@ -43,7 +43,6 @@ export default function App() {
   const [drumPattern, setDrumPattern] = useState("Straight rock");
   const [drumSteps, setDrumSteps] = useState<Record<string, number[]>>({ Kick: [0, 8], Snare: [4, 12], "Closed hi-hat": [0, 2, 4, 6, 8, 10, 12, 14], "Open hi-hat": [] });
   const [drumRunning, setDrumRunning] = useState(false);
-  const [recording, setRecording] = useState(false);
 
   useEffect(() => {
     if (!sessionRunning) return;
@@ -268,9 +267,9 @@ export default function App() {
   const toggleDrumStep = (instrument: string, step: number) => setDrumSteps(current => ({ ...current, [instrument]: current[instrument].includes(step) ? current[instrument].filter(value => value !== step) : [...current[instrument], step].sort((a, b) => a - b) }));
   const renderDrumScreen = () => (
     <>
-      <Text style={styles.eyebrow}>RHYTHM & DEMO ROOM</Text>
+      <Text style={styles.eyebrow}>RHYTHM ROOM</Text>
       <Text style={styles.title}>Drum machine</Text>
-      <Text style={styles.description}>Choose a backing groove or build a beat on the 16-step grid. Recording will live here alongside the drum controls.</Text>
+      <Text style={styles.description}>Choose a preset groove, set the tempo, then build and customise your own drum pattern on the 16-step grid.</Text>
       <View style={styles.timerCard}>
         <Text style={styles.summaryLabel}>TEMPO</Text>
         <View style={styles.tempoRow}>
@@ -279,10 +278,9 @@ export default function App() {
           <TouchableOpacity style={styles.tempoButton} onPress={() => setDrumBpm(value => Math.min(240, value + 1))}><Text style={styles.tempoButtonText}>+</Text></TouchableOpacity>
         </View>
         <View style={styles.stepButtons}>
-          <TouchableOpacity onPress={() => setDrumRunning(value => !value)} style={styles.primaryButton}><Text style={styles.buttonText}>{drumRunning ? "STOP" : "PLAY LOOP"}</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => setRecording(value => !value)} style={[styles.recordButton, recording && styles.recordButtonActive]}><Text style={styles.buttonText}>{recording ? "STOP RECORDING" : "● RECORD"}</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setDrumRunning(value => !value)} style={styles.primaryButton}><Text style={styles.buttonText}>{drumRunning ? "STOP LOOP" : "PLAY LOOP"}</Text></TouchableOpacity>
         </View>
-        <Text style={styles.hint}>Playback and microphone recording are not connected yet. The controls below define the beat while the audio engine is added.</Text>
+        <Text style={styles.hint}>Set your tempo, choose a groove and customise each drum hit below. Audio playback is the next development step.</Text>
       </View>
       <Text style={styles.sectionLabel}>PRESET GROOVES</Text>
       <View style={styles.choiceGrid}>
@@ -301,12 +299,6 @@ export default function App() {
         ))}
         <Text style={styles.hint}>Tap a square to switch that drum hit on or off. Steps 1, 5, 9 and 13 mark the quarter-note beats.</Text>
         <TouchableOpacity style={styles.secondaryButton} onPress={() => { setDrumSteps({ Kick: [], Snare: [], "Closed hi-hat": [], "Open hi-hat": [] }); setDrumPattern("Custom"); }}><Text style={styles.buttonText}>CLEAR PATTERN</Text></TouchableOpacity>
-      </View>
-      <Text style={styles.sectionLabel}>DEMO RECORDING</Text>
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>Record with your groove</Text>
-        <Text style={styles.description}>The finished recording area will capture your instrument performance and the drum backing together, then let you replay and save the combined demo. It will not be a separate recording screen.</Text>
-        <Text style={styles.hint}>Next audio milestone: integrate drum playback, input recording, synchronisation and demo playback in this screen.</Text>
       </View>
     </>
   );
@@ -345,7 +337,7 @@ export default function App() {
         <Text style={styles.description}>{currentExercise.detail}</Text>
         <Text style={styles.duration}>Suggested duration: {currentExercise.duration}</Text>
       </View>
-      <Text style={styles.hint}>This first practice module tracks elapsed time locally. An audible metronome, backing tracks and recording tools will be added as dedicated audio features.</Text>
+      <Text style={styles.hint}>This first practice module tracks elapsed time locally. An audible metronome and backing tracks will be added as dedicated audio features.</Text>
     </>
   );
 
@@ -459,8 +451,6 @@ const styles = StyleSheet.create({
   tempoButtonText: { color: "#FFFFFF", fontSize: 25, fontWeight: "700" },
   tempoValue: { color: "#FFFFFF", fontSize: 32, fontWeight: "900" },
   tempoUnit: { color: "#A5ADB8", fontSize: 13 },
-  recordButton: { flex: 1, backgroundColor: "#6F3035", padding: 13, borderRadius: 8, alignItems: "center" },
-  recordButtonActive: { backgroundColor: "#B32632" },
   drumRow: { marginTop: 15 },
   drumInstrument: { color: "#D6DCE4", fontSize: 11, fontWeight: "800", marginBottom: 7 },
   drumSteps: { flexDirection: "row", justifyContent: "space-between", gap: 3 },
