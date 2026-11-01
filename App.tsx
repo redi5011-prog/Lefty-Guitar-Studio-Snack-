@@ -4,8 +4,7 @@ import {
 } from "react-native";
 import {
   CHORD_DEFINITIONS, ChordName, getChordNotes, getFretNote, getPitchClasses,
-  getScaleNotes, NOTE_NAMES, SCALE_DEFINITIONS, ScaleName, STANDARD_BASS_4_TUNING,
-  STANDARD_GUITAR_TUNING
+  getScaleNotes, NOTE_NAMES, SCALE_DEFINITIONS, ScaleName
 } from "./src/musicTheory";
 
 type TabName = "Fretboard" | "Scales" | "Chords" | "Practice" | "Bass";
@@ -50,10 +49,6 @@ export default function App() {
   const activeNotes = tab === "Chords" ? chordNotes : scaleNotes;
   const activePitchClasses = useMemo(() => getPitchClasses(activeNotes), [activeNotes]);
   const isBass = tab === "Bass";
-  const tuning = isBass ? STANDARD_BASS_4_TUNING : STANDARD_GUITAR_TUNING;
-  const stringRows = isBass
-    ? [{ name: "G", pitch: "G" }, { name: "D", pitch: "D" }, { name: "A", pitch: "A" }, { name: "Low E", pitch: "E" }]
-    : [{ name: "High E", pitch: "E" }, { name: "B", pitch: "B" }, { name: "G", pitch: "G" }, { name: "D", pitch: "D" }, { name: "A", pitch: "A" }, { name: "Low E", pitch: "E" }];
   const fretColumns = Array.from({ length: 13 }, (_, index) => 12 - index);
   const currentExercise = EXERCISES[exerciseIndex];
 
