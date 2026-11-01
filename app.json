@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Lefty Guitar Studio",
-    "slug": "lefty-guitar-studio",
+    "slug": "lefty-guitar-studio-nma5011",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -11,6 +11,12 @@
     },
     "ios": {
       "bundleIdentifier": "com.leftyguitarstudio.app"
+    },
+    "owner": "nma5011",
+    "extra": {
+      "eas": {
+        "projectId": "821cb20d-201c-4bb3-8ae0-5425217d0ef4"
+      }
     }
   }
 }
