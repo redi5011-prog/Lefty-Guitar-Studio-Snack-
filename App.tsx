@@ -59,10 +59,15 @@ export default function App() {
                     const note = pattern.find(p => p.stringName === s && p.fret === f);
                     const active = note && current.stringName === s && current.fret === f;
                     return <View key={f} style={styles.fretCell}>
-                      {note ? <View style={[styles.noteDot, active && styles.noteActive]}>
+                      {note ? <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={`${note.note}, ${s} string, fret ${f}, finger ${note.finger}`}
+                        onPress={() => setStep(pattern.findIndex(p => p.stringName === s && p.fret === f))}
+                        style={[styles.noteDot, active && styles.noteActive]}
+                      >
                         <Text style={styles.noteText}>{note.note}</Text>
                         <Text style={styles.fingerText}>{note.finger}</Text>
-                      </View> : null}
+                      </TouchableOpacity> : null}
                     </View>;
                   })}
                 </View>
